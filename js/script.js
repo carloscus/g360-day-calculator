@@ -153,16 +153,16 @@ function agregarFila() {
           </div>
           <span class="text-danger small" id="errorDias${id}" role="alert" aria-live="polite"></span>
         </div>
-        <!-- Resultado: 50% -->
-        <div class="flex-grow-1" style="min-width: 250px; flex: 0 0 50%; max-width: 50%;">
+        <!-- Resultado: 45% -->
+        <div class="flex-grow-1" style="min-width: 250px; flex: 0 0 45%; max-width: 45%;">
           <div class="form-floating">
             <input type="text" class="form-control resultado" id="resultado${id}" placeholder="Resultado" readonly>
             <label for="resultado${id}">Resultado</label>
           </div>
         </div>
-        <!-- Botón eliminar -->
-        <div class="flex-shrink-0" style="flex: 0 0 auto;">
-          <button class="btn btn-danger btn-eliminar" onclick="eliminarFila(this)" title="Eliminar fila" aria-label="Eliminar fila">
+        <!-- Botón: 5% -->
+        <div class="flex-shrink-0" style="flex: 0 0 5%; max-width: 5%;">
+          <button class="btn btn-danger btn-eliminar w-100" onclick="eliminarFila(this)" title="Eliminar fila" aria-label="Eliminar fila">
             <i class="bi bi-trash"></i>
           </button>
         </div>
