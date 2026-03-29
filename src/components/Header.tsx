@@ -5,19 +5,20 @@ interface HeaderProps {
 
 export const Header = ({ isDark, toggleDark }: HeaderProps) => {
   return (
-    <header className="pb-3 mb-4 border-bottom">
-      <div className="d-flex align-items-center justify-content-between">
+    <header>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <h1 className="d-flex align-items-center text-body-emphasis text-decoration-none">
-            <i className="bi bi-calendar-range me-3"></i>
+          <h1>
+            <i className="bi bi-calendar-range" style={{ marginRight: '8px' }}></i>
             G360 Day Calculator
           </h1>
-          <p className="text-muted mb-0">Calcula fechas y días con feriados peruanos.</p>
+          <p>Calcula fechas y días con feriados peruanos.</p>
         </div>
         <button 
-          className="btn btn-outline-secondary" 
+          className="btn btn-secondary" 
           onClick={toggleDark}
           title="Alternar modo oscuro (Ctrl+D)"
+          style={{ padding: '6px 10px' }}
         >
           <i className={`bi ${isDark ? 'bi-sun' : 'bi-moon-stars'}`}></i>
         </button>

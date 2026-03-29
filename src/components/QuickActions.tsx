@@ -5,45 +5,37 @@ interface QuickActionsProps {
 
 export const QuickActions = ({ diasGracia, onToggleDiasGracia }: QuickActionsProps) => {
   return (
-    <div className="card shadow-sm mb-4">
+    <div className="card">
       <div className="card-header">
-        <h5 className="my-0 fw-normal">Acciones Rápidas</h5>
+        Acciones Rápidas
       </div>
       <div className="card-body">
-        <div className="row align-items-center">
-          <div className="col-md-auto">
-            <div className="form-check form-switch mb-2 mb-md-0">
-              <input 
-                className="form-check-input" 
-                type="checkbox" 
-                role="switch" 
-                id="diasGracia"
-                checked={diasGracia}
-                onChange={onToggleDiasGracia}
-              />
-              <label className="form-check-label" htmlFor="diasGracia">
-                +2 días por proceso
-              </label>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px' }}>
+          <label className="form-switch">
+            <input 
+              type="checkbox"
+              id="diasGracia"
+              checked={diasGracia}
+              onChange={onToggleDiasGracia}
+            />
+            <span>+2 días por proceso</span>
+          </label>
+          <div className="quick-actions">
+            <div className="btn-group">
+              <button className="btn btn-secondary btn-sm">45d</button>
+              <button className="btn btn-secondary btn-sm">60d</button>
+              <button className="btn btn-secondary btn-sm">75d</button>
             </div>
-          </div>
-          <div className="col">
-            <div className="btn-toolbar" role="toolbar">
-              <div className="btn-group btn-group-sm me-2 mb-2">
-                <button className="btn btn-outline-secondary">45d</button>
-                <button className="btn btn-outline-secondary">60d</button>
-                <button className="btn btn-outline-secondary">75d</button>
-              </div>
-              <div className="btn-group btn-group-sm me-2 mb-2">
-                <button className="btn btn-outline-secondary">45/60</button>
-                <button className="btn btn-outline-secondary">60/75</button>
-              </div>
-              <div className="btn-group btn-group-sm me-2 mb-2">
-                <button className="btn btn-outline-secondary">40/50/60</button>
-                <button className="btn btn-outline-secondary">45/60/75</button>
-              </div>
-              <div className="btn-group btn-group-sm mb-2">
-                <button className="btn btn-outline-secondary">45/55/65/75</button>
-              </div>
+            <div className="btn-group">
+              <button className="btn btn-secondary btn-sm">45/60</button>
+              <button className="btn btn-secondary btn-sm">60/75</button>
+            </div>
+            <div className="btn-group">
+              <button className="btn btn-secondary btn-sm">40/50/60</button>
+              <button className="btn btn-secondary btn-sm">45/60/75</button>
+            </div>
+            <div className="btn-group">
+              <button className="btn btn-secondary btn-sm">45/55/65/75</button>
             </div>
           </div>
         </div>

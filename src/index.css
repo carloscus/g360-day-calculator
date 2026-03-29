@@ -375,3 +375,15 @@ header h1 i {
   opacity: 0.7;
   font-size: 9px;
 }
+
+/* Dark Mode - G360 Full */
+[data-theme="dark"] {
+  --g360-primary: #00d084;
+  --g360-primary-dark: #00a066;
+  --g360-bg: #0b1220;
+  --g360-bg-light: #151e2e;
+  --g360-text: #f0f4f8;
+  --g360-text-muted: #94a3b8;
+  --g360-border: #30363d;
+  --g360-glow: rgba(0, 208, 132, 0.4);
+}
