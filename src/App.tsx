@@ -5,6 +5,7 @@ import { CalculationRow } from './components/CalculationRow'
 import { ActionButtons } from './components/ActionButtons'
 import { Legend } from './components/Legend'
 import { Toast } from './components/Toast'
+import { G360Signature } from './components/G360Signature'
 import { useHistory } from './hooks/useHistory'
 import { useDarkMode } from './hooks/useDarkMode'
 import { Calculation } from './types'
@@ -120,16 +121,7 @@ function App() {
 
       {toast && <Toast message={toast.message} type={toast.type} />}
 
-      <footer className="app-footer">
-        <div className="footer-brand">
-          <img src="/assets/images/logo-g360.svg" alt="G360" className="footer-logo" />
-          <span className="footer-tagline">G360 Ecosystem</span>
-        </div>
-        <div className="footer-signature">
-          <span>Engine by Carlos Cusi (CCUSI)</span>
-        </div>
-        <div className="footer-version">v3.0 PWA</div>
-      </footer>
+      <G360Signature cliente="CCUSI" version="3.0" />
     </div>
   )
 }
