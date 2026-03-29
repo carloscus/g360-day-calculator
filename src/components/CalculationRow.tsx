@@ -25,57 +25,42 @@ export const CalculationRow = ({ row, onCalculate, onRemove, canRemove }: Calcul
   }
 
   return (
-    <div className="card mb-3">
-      <div className="card-body p-3">
-        <div className="d-flex align-items-center gap-2">
-          <div style={{ width: 170 }}>
-            <div className="form-floating">
-              <input
-                type="text"
-                className="form-control"
-                placeholder="dd/mm/yyyy"
-                value={fecha}
-                onChange={(e) => handleFechaChange(e.target.value)}
-              />
-              <label>Fecha</label>
-            </div>
-          </div>
-          <div style={{ width: 80 }}>
-            <div className="form-floating">
-              <input
-                type="number"
-                className="form-control"
-                placeholder="Días"
-                value={dias || ''}
-                onChange={(e) => handleDiasChange(Number(e.target.value))}
-              />
-              <label>Días</label>
-            </div>
-          </div>
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <div className="form-floating">
-              <input
-                type="text"
-                className="form-control resultado"
-                placeholder="Resultado"
-                value={row.resultado}
-                readOnly
-              />
-              <label>Resultado</label>
-            </div>
-          </div>
-          <div style={{ width: 50 }}>
-            <button
-              className="btn btn-success w-100"
-              onClick={onRemove}
-              disabled={!canRemove}
-              title="Eliminar fila"
-            >
-              <i className="bi bi-dash-circle"></i>
-            </button>
-          </div>
-        </div>
+    <div className="calc-row">
+      <div className="calc-input-group">
+        <label className="calc-label">FECHA</label>
+        <input
+          type="text"
+          className="calc-input"
+          placeholder="dd/mm/yyyy"
+          value={fecha}
+          onChange={(e) => handleFechaChange(e.target.value)}
+        />
       </div>
+      <div className="calc-input-group calc-dias">
+        <label className="calc-label">DÍAS</label>
+        <input
+          type="number"
+          className="calc-input"
+          placeholder="0"
+          value={dias || ''}
+          onChange={(e) => handleDiasChange(Number(e.target.value))}
+        />
+      </div>
+      <div className="calc-input-group calc-result">
+        <label className="calc-label">RESULTADO</label>
+        <input
+          type="text"
+          className="calc-input calc-result-input"
+          placeholder="--"
+          value={row.resultado}
+          readOnly
+        />
+      </div>
+      {canRemove && (
+        <button className="calc-remove" onClick={onRemove} title="Eliminar">
+          <i className="bi bi-x-circle"></i>
+        </button>
+      )}
     </div>
   )
 }

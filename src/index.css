@@ -121,29 +121,108 @@ header h1 i {
   font-size: 0.75rem;
 }
 
-/* Calculation row */
-.calculation-row {
+/* Calculation row - Compact mobile */
+.calc-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 0;
+  gap: 6px;
+  padding: 8px 10px;
+  background: var(--g360-bg-light);
+  border: 1px solid var(--g360-border);
+  border-radius: 8px;
+  margin-bottom: 8px;
 }
 
-.calculation-row > div {
-  flex-shrink: 0;
+.calc-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.calculation-row .fecha-input {
-  width: 100px;
+.calc-label {
+  font-size: 0.6rem;
+  color: var(--g360-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
 }
 
-.calculation-row .dias-input {
-  width: 60px;
+.calc-input {
+  background: var(--g360-bg);
+  border: 1px solid var(--g360-border);
+  border-radius: 4px;
+  padding: 6px 8px;
+  color: var(--g360-text);
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.calculation-row .resultado-input {
+.calc-input:focus {
+  border-color: var(--g360-primary);
+  box-shadow: 0 0 0 2px var(--g360-glow);
+}
+
+.calc-input::placeholder {
+  color: var(--g360-text-muted);
+  opacity: 0.5;
+}
+
+/* Column widths for 390px mobile */
+.calc-row .calc-input-group:nth-child(1) {
+  width: 85px;
+}
+
+.calc-row .calc-input-group:nth-child(2) {
+  width: 50px;
+}
+
+.calc-row .calc-input-group:nth-child(3) {
   flex: 1;
-  min-width: 80px;
+  min-width: 0;
+}
+
+.calc-result-input {
+  font-weight: 700;
+  color: var(--g360-primary);
+  text-align: center;
+}
+
+.calc-remove {
+  background: transparent;
+  border: none;
+  color: var(--g360-text-muted);
+  font-size: 1.25rem;
+  padding: 4px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s, color 0.2s;
+}
+
+.calc-remove:hover {
+  opacity: 1;
+  color: #dc3545;
+}
+
+/* Responsive - larger screens */
+@media (min-width: 420px) {
+  .calc-row {
+    gap: 10px;
+    padding: 10px 12px;
+  }
+  
+  .calc-row .calc-input-group:nth-child(1) {
+    width: 110px;
+  }
+  
+  .calc-row .calc-input-group:nth-child(2) {
+    width: 60px;
+  }
+  
+  .calc-input {
+    padding: 8px 10px;
+    font-size: 0.9rem;
+  }
 }
 
 /* Resultado */
