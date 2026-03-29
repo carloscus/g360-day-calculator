@@ -15,9 +15,12 @@
 .app-container {
   min-height: 100vh;
   max-width: 390px;
+  width: 100%;
   margin: 0 auto;
-  padding: 16px;
+  padding: 12px;
   padding-bottom: 80px;
+  overflow-x: hidden;
+  box-sizing: border-box;
   background: var(--g360-bg);
 }
 
@@ -166,6 +169,8 @@ header h1 i {
   font-size: 0.8rem;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .calc-input:focus {
