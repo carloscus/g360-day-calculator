@@ -6,6 +6,7 @@ import { ActionButtons } from './components/ActionButtons'
 import { Legend } from './components/Legend'
 import { Toast } from './components/Toast'
 import { G360Signature } from './components/G360Signature'
+import { HolidaysModal } from './components/HolidaysModal'
 import { useHistory } from './hooks/useHistory'
 import { useDarkMode } from './hooks/useDarkMode'
 import { Calculation } from './types'
@@ -16,12 +17,13 @@ function App() {
     { id: 1, fecha: '', dias: 0, resultado: '', diasGracia: false }
   ])
   const [diasGracia, setDiasGracia] = useState(false)
+  const [showHolidays, setShowHolidays] = useState(false)
   const { addToHistory } = useHistory()
   const { isDark, toggleDark } = useDarkMode()
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-bs-theme', isDark ? 'dark' : 'light')
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light')
   }, [isDark])
 
   useEffect(() => {
@@ -119,7 +121,19 @@ function App() {
 
       <Legend />
 
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+        <button 
+          className="btn-g360 btn-g360-secondary" 
+          onClick={() => setShowHolidays(true)}
+          style={{ fontSize: '0.75rem' }}
+        >
+          <i className="bi bi-calendar-event"></i> Ver Feriados
+        </button>
+      </div>
+
       {toast && <Toast message={toast.message} type={toast.type} />}
+
+      <HolidaysModal isOpen={showHolidays} onClose={() => setShowHolidays(false)} />
 
       <G360Signature cliente="CCUSI" version="3.0" />
     </div>

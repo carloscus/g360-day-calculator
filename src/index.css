@@ -387,3 +387,106 @@ header h1 i {
   --g360-border: #30363d;
   --g360-glow: rgba(0, 208, 132, 0.4);
 }
+
+/* ========================================
+    Modal Holidays
+    ======================================== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 16px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-g360 {
+  background: var(--g360-surface);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 360px;
+  max-height: 80vh;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid var(--g360-border);
+}
+
+.modal-header h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--g360-text);
+  margin: 0;
+}
+
+.modal-header .btn-close {
+  background: transparent;
+  border: none;
+  color: var(--g360-muted);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.modal-header .btn-close:hover {
+  background: var(--g360-border);
+  color: var(--g360-text);
+}
+
+.modal-body {
+  padding: 16px;
+  overflow-y: auto;
+  max-height: calc(80vh - 60px);
+}
+
+.holidays-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.holiday-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: var(--g360-bg);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--g360-border);
+}
+
+.holiday-date {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--g360-accent);
+}
+
+.holiday-name {
+  font-size: 0.8rem;
+  color: var(--g360-text);
+}
