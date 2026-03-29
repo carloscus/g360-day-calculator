@@ -90,7 +90,7 @@ function App() {
   }
 
   return (
-    <div className="container py-4">
+    <div className="app-container">
       <Header isDark={isDark} toggleDark={toggleDark} />
       
       <QuickActions 
@@ -120,8 +120,15 @@ function App() {
 
       {toast && <Toast message={toast.message} type={toast.type} />}
 
-      <footer className="pt-3 mt-4 text-body-secondary border-top">
-        <span className="version-info">G360 Day Calculator v3.0</span>
+      <footer className="app-footer">
+        <div className="footer-brand">
+          <img src="/assets/images/logo-g360.svg" alt="G360" className="footer-logo" />
+          <span className="footer-tagline">G360 Ecosystem</span>
+        </div>
+        <div className="footer-signature">
+          <span>Engine by Carlos Cusi (CCUSI)</span>
+        </div>
+        <div className="footer-version">v3.0 PWA</div>
       </footer>
     </div>
   )

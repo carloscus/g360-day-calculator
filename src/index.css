@@ -1,20 +1,275 @@
+/* G360 Day Calculator - Estilos PWA Mobile First */
+
 :root {
-  --g360-primary: #007bff;
-  --g360-success: #28a745;
-  --g360-danger: #dc3545;
+  --g360-primary: #00d084;
+  --g360-primary-dark: #00a066;
+  --g360-bg: #0d1117;
+  --g360-bg-light: #161b22;
+  --g360-text: #c9d1d9;
+  --g360-text-muted: #8b949e;
+  --g360-border: #30363d;
+  --g360-glow: rgba(0, 208, 132, 0.4);
+  --g360-backlight: 0 0 20px rgba(0, 208, 132, 0.5), 0 0 40px rgba(0, 208, 132, 0.3);
 }
 
-.color-box {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border-radius: 2px;
+/* Mobile First - 390px width */
+.app-container {
+  min-height: 100vh;
+  max-width: 390px;
+  margin: 0 auto;
+  padding: 16px;
+  background: var(--g360-bg);
 }
 
-.resultado {
+/* Header */
+header {
+  text-align: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--g360-border);
+}
+
+header h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--g360-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+header h1 i {
+  color: var(--g360-primary);
+}
+
+/* Logo G360 con backlight */
+.footer-logo {
+  height: 32px;
+  filter: drop-shadow(var(--g360-backlight));
+}
+
+/* Footer estilo G360 */
+.app-footer {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--g360-border);
+  text-align: center;
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.footer-logo {
+  height: 24px;
+  filter: drop-shadow(0 0 8px rgba(0, 208, 132, 0.5));
+}
+
+.footer-tagline {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--g360-primary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.footer-signature {
+  font-size: 0.75rem;
+  color: var(--g360-text-muted);
+  margin-top: 4px;
+}
+
+.footer-version {
+  font-size: 0.625rem;
+  color: var(--g360-text-muted);
+  margin-top: 4px;
+  opacity: 0.7;
+}
+
+/* Cards */
+.card {
+  background: var(--g360-bg-light);
+  border: 1px solid var(--g360-border);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+.card-header {
+  background: transparent;
+  border-bottom: 1px solid var(--g360-border);
+  padding: 12px 16px;
+}
+
+.card-body {
+  padding: 12px;
+}
+
+/* Form inputs */
+.form-control, .form-floating > .form-control {
+  background: var(--g360-bg);
+  border: 1px solid var(--g360-border);
+  color: var(--g360-text);
+  border-radius: 8px;
+}
+
+.form-control:focus {
+  background: var(--g360-bg);
+  border-color: var(--g360-primary);
+  box-shadow: 0 0 0 2px var(--g360-glow);
+  color: var(--g360-text);
+}
+
+.form-floating > label {
+  color: var(--g360-text-muted);
+}
+
+/* Buttons */
+.btn-primary {
+  background: var(--g360-primary);
+  border-color: var(--g360-primary);
+  color: #000;
   font-weight: 600;
 }
 
-.version-info {
-  font-size: 0.875rem;
+.btn-primary:hover {
+  background: var(--g360-primary-dark);
+  border-color: var(--g360-primary-dark);
+}
+
+.btn-success {
+  background: var(--g360-primary);
+  border-color: var(--g360-primary);
+  color: #000;
+}
+
+.btn-outline-secondary {
+  border-color: var(--g360-border);
+  color: var(--g360-text);
+}
+
+.btn-outline-secondary:hover {
+  background: var(--g360-border);
+  border-color: var(--g360-border);
+  color: var(--g360-text);
+}
+
+/* Quick actions */
+.btn-toolbar {
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.btn-group-sm .btn {
+  padding: 4px 8px;
+  font-size: 0.75rem;
+}
+
+/* Calculation row */
+.calculation-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.calculation-row > div {
+  flex-shrink: 0;
+}
+
+.calculation-row .fecha-input {
+  width: 100px;
+}
+
+.calculation-row .dias-input {
+  width: 60px;
+}
+
+.calculation-row .resultado-input {
+  flex: 1;
+  min-width: 80px;
+}
+
+/* Resultado */
+.resultado {
+  font-weight: 700;
+  font-size: 1rem;
+  text-align: center;
+}
+
+/* Color boxes */
+.color-box {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+/* Toast */
+.toast {
+  background: var(--g360-bg-light);
+  border: 1px solid var(--g360-border);
+  color: var(--g360-text);
+}
+
+.toast-body {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Form switch */
+.form-switch .form-check-input {
+  width: 2.5em;
+  height: 1.25em;
+}
+
+.form-switch .form-check-input:checked {
+  background-color: var(--g360-primary);
+  border-color: var(--g360-primary);
+}
+
+/* Responsive para pantallas más grandes */
+@media (min-width: 400px) {
+  .app-container {
+    max-width: 100%;
+    padding: 20px;
+  }
+  
+  .calculation-row .fecha-input {
+    width: 140px;
+  }
+  
+  .calculation-row .dias-input {
+    width: 80px;
+  }
+}
+
+/* Animations */
+@keyframes glow {
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(0, 208, 132, 0.5)); }
+  50% { filter: drop-shadow(0 0 16px rgba(0, 208, 132, 0.8)); }
+}
+
+.footer-logo {
+  animation: glow 3s ease-in-out infinite;
+}
+
+/* Text colors for dark mode */
+[data-bs-theme="dark"] {
+  color-scheme: dark;
+}
+
+[data-bs-theme="light"] {
+  --g360-bg: #ffffff;
+  --g360-bg-light: #f8f9fa;
+  --g360-text: #212529;
+  --g360-text-muted: #6c757d;
+  --g360-border: #dee2e6;
 }
