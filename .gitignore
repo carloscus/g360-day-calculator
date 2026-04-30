@@ -28,9 +28,3 @@ npm-debug.log*
 # Vite
 .vite/
 
-# Legacy files (old version - no needed)
-css/
-js/
-assets/
-manifest.json
-sw.js
