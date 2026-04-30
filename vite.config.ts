@@ -3,7 +3,12 @@ import { svelte } from '@sveltejs/vite-plugin-svelte'
 
 export default defineConfig({
   plugins: [svelte()],
-  base: '/g360-day-calculator/',
+  base: './',
+  build: {
+    outDir: 'dist',
+    assetsDir: 'g360-assets',
+    sourcemap: false,
+  },
   server: {
     port: 3000,
     open: true,
@@ -12,9 +17,5 @@ export default defineConfig({
       protocol: 'ws',
       host: 'localhost'
     },
-  },
-  build: {
-    outDir: 'dist',
-    sourcemap: false,
   },
 })
