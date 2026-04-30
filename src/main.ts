@@ -10,7 +10,7 @@ const app = mount(App, {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker
-      .register(`${import.meta.env.BASE_URL}sw.js`)
+      .register(`${import.meta.env.BASE_URL}g360-sw.js`)
       .catch(err => console.error('Service Worker registration failed:', err));
   });
 }
