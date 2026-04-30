@@ -1,7 +1,19 @@
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { svelte } from '@sveltejs/vite-plugin-svelte'
 
 export default defineConfig({
-  plugins: [react()],
-  base: '/'
+  plugins: [svelte()],
+  server: {
+    port: 3000,
+    open: true,
+    host: 'localhost',
+    hmr: {
+      protocol: 'ws',
+      host: 'localhost'
+    },
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: false,
+  },
 })

@@ -1,0 +1,158 @@
+/* G360 Theme - Day Calculator */
+:root {
+  /* Colors - Dark Theme (Default) */
+  --g360-bg: #0b1220;
+  --g360-surface: #151e2e;
+  --g360-accent: #00d084;
+  --g360-accent-dark: #00796B;
+  --g360-text: #f0f4f8;
+  --g360-muted: #94a3b8;
+  --g360-border: rgba(255, 255, 255, 0.1);
+  --bs-body-bg: #0b1220;
+  --bs-body-color: #f0f4f8;
+
+  /* Status Colors */
+  --g360-status-holiday: #ef4444;
+  --g360-status-saturday: #3b82f6;
+  --g360-status-working: #22c55e;
+  --g360-status-bg-opacity: 80%;
+
+  /* Effects */
+  --g360-glass: rgba(21, 30, 46, 0.75);
+  --g360-blur: 16px;
+  --g360-rounded: 16px;
+
+  /* Spacing Scale */
+  --g360-space-xs: 4px;
+  --g360-space-sm: 8px;
+  --g360-space-md: 16px;
+  --g360-space-lg: 24px;
+  --g360-space-xl: 32px;
+
+  /* Typography - G360 Standard */
+  --g360-font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  --g360-font-h1: 1.5rem;
+  --g360-font-h2: 0.875rem;
+  --g360-font-body: 0.875rem;
+  --g360-font-sm: 0.75rem;
+  --g360-font-micro: 0.625rem;
+}
+
+/* Light Theme - Auto detect */
+@media (prefers-color-scheme: light) {
+  :root {
+    --g360-bg: #ffffff;
+    --g360-surface: #f5f5f5;
+    --g360-accent: #00d084;
+    --g360-text: #1f2937;
+    --g360-muted: #6b7280;
+    --g360-border: rgba(0, 0, 0, 0.1);
+    --bs-body-bg: #ffffff;
+    --bs-body-color: #1f2937;
+    --g360-glass: rgba(255, 255, 255, 0.75);
+  }
+}
+
+body {
+  background: var(--g360-bg);
+  color: var(--g360-text);
+  font-family: var(--g360-font-family);
+  font-size: var(--g360-font-body);
+  box-sizing: border-box;
+}
+
+h1 {
+  font-size: var(--g360-font-h1);
+  font-weight: 700;
+  margin: 0;
+}
+
+h2 {
+  font-size: var(--g360-font-h2);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+small {
+  font-size: var(--g360-font-sm);
+}
+
+/* G360 Standard Components */
+.g360-card {
+  background: var(--g360-surface);
+  border: 1px solid var(--g360-border);
+  border-radius: var(--g360-rounded);
+}
+
+.g360-glass {
+  background: var(--g360-glass);
+  backdrop-filter: blur(var(--g360-blur));
+  -webkit-backdrop-filter: blur(var(--g360-blur));
+  border: 1px solid var(--g360-border);
+}
+
+.g360-input {
+  background: var(--g360-bg);
+  color: var(--g360-text);
+  border: 1px solid var(--g360-border);
+  border-radius: 8px;
+  font-size: var(--g360-font-body);
+  font-family: var(--g360-font-family);
+  width: 100%;
+  padding: var(--g360-space-sm) 0.75rem;
+}
+
+.g360-input:focus {
+  outline: none;
+  border-color: var(--g360-accent);
+}
+
+.g360-btn {
+  background: var(--g360-accent);
+  color: var(--g360-bg);
+  border: none;
+  border-radius: var(--g360-rounded);
+  padding: var(--g360-space-sm) var(--g360-space-md);
+  font-weight: 700;
+  font-family: var(--g360-font-family);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.g360-btn:hover {
+  background: var(--g360-accent-dark);
+}
+
+.g360-result {
+  font-size: var(--g360-font-h1);
+  font-weight: 700;
+  color: var(--g360-accent);
+}
+
+.g360-label {
+  color: var(--g360-muted);
+  font-size: var(--g360-font-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Status Colors */
+.status-holiday {
+  background-color: var(--g360-status-holiday) !important;
+  border-color: var(--g360-status-holiday) !important;
+  color: white !important;
+}
+
+.status-saturday {
+  background-color: var(--g360-status-saturday) !important;
+  border-color: var(--g360-status-saturday) !important;
+  color: white !important;
+}
+
+.status-working {
+  background-color: var(--g360-status-working) !important;
+  border-color: var(--g360-status-working) !important;
+  color: var(--g360-bg) !important;
+}
