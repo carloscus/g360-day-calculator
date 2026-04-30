@@ -63,7 +63,7 @@
     applyDarkMode()
 
     // Cargar feriados desde el archivo JSON público
-    fetch('/feriados.json')
+    fetch(`${import.meta.env.BASE_URL}feriados.json`)
       .then(res => res.json())
       .then(data => {
         const fijos = data.feriados || []

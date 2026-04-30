@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#09090b" />
+    <!-- Rutas absolutas para que Vite las procese con el base path -->
     <link rel="icon" type="image/svg+xml" href="/assets/images/favicon.svg" />
     <link rel="apple-touch-icon" href="/assets/icons/icon-192.png" />
     <link rel="manifest" href="/manifest.json" />
@@ -16,15 +17,8 @@
   </head>
   <body>
     <div id="app"></div>
+    <!-- Asegúrate de que la extensión sea .ts y no .tsx -->
     <script type="module" src="/src/main.ts"></script>
-  <!-- Service Worker para PWA -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(err => console.error('Service Worker registration failed:', err));
-      });
-    }
-  </script>
+    <script type="module" src="/g360-signature.js"></script>
 </body>
-  <script type="module" src="/g360-signature.js"></script>
 </html>

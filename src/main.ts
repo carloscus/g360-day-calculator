@@ -6,4 +6,13 @@ const app = mount(App, {
   target: document.getElementById('app')!,
 })
 
+// Registro del Service Worker para PWA con soporte para base path
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register(`${import.meta.env.BASE_URL}sw.js`)
+      .catch(err => console.error('Service Worker registration failed:', err));
+  });
+}
+
 export default app
