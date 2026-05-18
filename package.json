@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.app.json",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist",
+    "shipit": "git add . && git commit -m \"build: deploy updates G360\" && git push origin main && npm run build && npm run deploy"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^5.0.0",

@@ -1,4 +1,4 @@
-/* G360 Custom Styles - No Tailwind */
+n/n* G360 Custom Styles - No Tailwind */
 :root {
   --g360-bg: #0b1220;
   --g360-surface: #151e2e;
@@ -26,6 +26,12 @@ body {
   min-height: 100vh;
 }
 
+/* Mejorar el foco para accesibilidad */
+:focus-visible {
+  outline: 2px solid var(--g360-accent);
+  outline-offset: 2px;
+}
+
 /* Buttons - Using g360 standard */
 .g360-btn, .btn-primary {
   background: var(--g360-accent);
@@ -36,26 +42,43 @@ body {
   font-weight: 700;
   font-family: var(--g360-font-family);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .g360-btn:hover, .btn-primary:hover {
-  background: var(--g360-accent-dark, #00796B);
+  background: color-mix(in srgb, var(--g360-accent), black 10%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 208, 132, 0.3);
+}
+
+.g360-btn:active, .btn-primary:active {
+  transform: scale(0.94);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .btn-secondary {
-  background: #52525b;
+  background: transparent;
   color: var(--g360-text);
-  border: none;
+  border: 1px solid var(--g360-border);
   border-radius: var(--g360-rounded, 16px);
   padding: var(--g360-space-sm, 8px) var(--g360-space-md, 16px);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-secondary:hover {
-  background: #3f3f46;
+  background: color-mix(in srgb, var(--g360-accent), transparent 90%);
+  border-color: var(--g360-accent);
+  color: var(--g360-accent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 208, 132, 0.15);
+}
+
+.btn-secondary:active {
+  transform: scale(0.94);
+  background: color-mix(in srgb, var(--g360-accent), transparent 80%);
 }
 
 .btn-danger {
@@ -66,11 +89,18 @@ body {
   padding: var(--g360-space-sm, 8px) var(--g360-space-md, 16px);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .btn-danger:hover {
   background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.btn-danger:active {
+  transform: scale(0.94);
 }
 
 .btn-theme {
@@ -81,12 +111,19 @@ body {
   padding: var(--g360-space-sm, 8px) var(--g360-space-md, 16px);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-theme:hover {
-  background: var(--g360-surface);
-  color: var(--g360-text);
+  background: color-mix(in srgb, var(--g360-accent), transparent 90%);
+  border-color: var(--g360-accent);
+  color: var(--g360-accent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 208, 132, 0.15);
+}
+
+.btn-theme:active {
+  transform: scale(0.97);
 }
 
 /* Cards */

@@ -1,6 +1,6 @@
 import type { Feriado } from './types'
 
-export const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+export const dayNames = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
 
 export function isHoliday(date: Date, feriados: Feriado[]): boolean {
   const day = date.getDate()
@@ -70,7 +70,10 @@ export function getFinalDate(base: Date, days: number, grace: boolean, feriados:
 }
 
 export function formatDate(date: Date): string {
-  return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`
+  const d = date.getDate().toString().padStart(2, '0')
+  const m = (date.getMonth() + 1).toString().padStart(2, '0')
+  const y = date.getFullYear()
+  return `${d}/${m}/${y} (${dayNames[date.getDay()]})`
 }
 
 /**

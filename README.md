@@ -36,7 +36,8 @@
 ### Feriados Peruanos
 - Identificación automática de feriados fijos
 - Cálculo automático de Semana Santa (Jueves y Viernes Santo)
-- Modal con lista de feriados del año
+- **Ventana Rodante:** Muestra feriados desde hoy hasta 12 meses en el futuro.
+- **Identificación de Días:** Incluye el día de la semana (dom, lun, etc.) en cada feriado.
 
 ### Exportación Avanzada
 - **Excel/CSV compatible:** Exportación detallada en 6 columnas.

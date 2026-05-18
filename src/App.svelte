@@ -15,7 +15,9 @@
    */
 
   // Variables de entrada para cálculo único
-  let globalBaseDate = $derived(formatDate(new Date()))
+  let globalBaseDate = $derived.by(() => {
+    return formatDate(new Date());
+  });
 
   // Control de visibilidad de modales y secciones
   let showHolidays = $state(false) // Controla la visibilidad del modal de feriados
@@ -67,11 +69,42 @@
       .then(res => res.json())
       .then(data => {
         const fijos = data.feriados || []
-        const currentYear = new Date().getFullYear()
-        // Inyectar Semana Santa del año actual y del siguiente
-        const movilesHoy = getSemanaSanta(currentYear)
-        const movilesProx = getSemanaSanta(currentYear + 1)
-        feriados = [...fijos, ...movilesHoy, ...movilesProx]
+        const now = new Date()
+        now.setHours(0, 0, 0, 0)
+        const currentYear = now.getFullYear()
+        
+        // 1. Calcular la próxima ocurrencia de cada feriado fijo
+        const fijosProximos = fijos.map(f => {
+          let fechaOcurrencia = new Date(currentYear, f.mes - 1, f.dia)
+          // Si ya pasó este año, tomamos el del año siguiente
+          if (fechaOcurrencia < now) {
+            fechaOcurrencia = new Date(currentYear + 1, f.mes - 1, f.dia)
+          }
+          return { ...f, anio: fechaOcurrencia.getFullYear() }
+        })
+
+        // 2. Obtener Semana Santa (Móviles) para este año y el próximo
+        const moviles = [...getSemanaSanta(currentYear), ...getSemanaSanta(currentYear + 1)]
+        
+        // 3. Unir y filtrar solo los que están en el futuro (máximo 12 meses)
+        const limiteFuturo = new Date(now)
+        limiteFuturo.setFullYear(limiteFuturo.getFullYear() + 1)
+
+        feriados = [...fijosProximos, ...moviles]
+          .filter(f => {
+            const d = new Date(f.anio!, f.mes - 1, f.dia)
+            return d >= now && d <= limiteFuturo
+          })
+          .sort((a, b) => {
+            const dateA = new Date(a.anio!, a.mes - 1, a.dia).getTime()
+            const dateB = new Date(b.anio!, b.mes - 1, b.dia).getTime()
+            return dateA - dateB
+          })
+          .map(f => {
+            const d = new Date(f.anio!, f.mes - 1, f.dia)
+            const diaSemana = dayNames[d.getDay()]
+            return { ...f, nombre: `${f.nombre} (${diaSemana})` }
+          })
       })
       .catch(() => {
         feriados = []
@@ -378,11 +411,10 @@
     base.setHours(0, 0, 0, 0)
     const inputDays = diasArray[0]
     const { final, extraDiff } = getFinalDate(base, inputDays, diasGracia, feriados)
-    const dayName = getDayName(final)
     
     row.resultado = diasGracia 
-      ? `${formatDate(final)} (${dayName}) (+${extraDiff} proceso)` 
-      : `${formatDate(final)} (${dayName})`
+      ? `${formatDate(final)} (+${extraDiff} proceso)` 
+      : formatDate(final)
     
     row.status = getDayStatus(final, feriados)
     row.mode = 'dias'
@@ -446,7 +478,7 @@
 
 <div class="app-container">
   <div class="container py-4">
-      <header class="pb-4 mb-5 border-b" role="banner">
+      <header class="pb-4 mb-5 border-b">
         <div class="d-flex align-items-center justify-content-between">
           <div class="d-flex align-items-center gap-3">
             <LogoG360 variant={darkMode ? 'dark' : 'light'} class="logo-sm" aria-hidden="true" />
@@ -470,7 +502,7 @@
         </div>
       </header>
 
-    <main>
+    <main id="main-content">
 
       <!--
         Sección de "Acciones Rápidas". Permite realizar cálculos predefinidos
@@ -480,7 +512,7 @@
       <div class="g360-card mb-4">
         <div class="card-header d-flex align-items-center justify-content-between">
           <h2>Acciones Rápidas</h2>
-          <button class="btn-collapse" onclick={() => quickActionsCollapsed = !quickActionsCollapsed} aria-label={quickActionsCollapsed ? 'Expandir' : 'Colapsar'}>
+          <button class="btn-collapse" onclick={() => quickActionsCollapsed = !quickActionsCollapsed} aria-label={quickActionsCollapsed ? 'Expandir acciones rápidas' : 'Colapsar acciones rápidas'} aria-expanded={!quickActionsCollapsed}>
             <i class="bi {quickActionsCollapsed ? 'bi-chevron-down' : 'bi-chevron-up'}"></i>
           </button>
         </div>
@@ -496,7 +528,7 @@
                     class:status-holiday={activeButtons.has(d) && getQuickStatus(d) === 'holiday'}
                     class:status-saturday={activeButtons.has(d) && getQuickStatus(d) === 'saturday'}
                     class:status-working={activeButtons.has(d) && getQuickStatus(d) === 'working'}
-                    onmousedown={() => toggleRapido(d)}
+                    onclick={() => toggleRapido(d)}
                   >
                     {d}d
                   </button>
@@ -513,7 +545,7 @@
                   {l: '75/90', v: [75, 90]}, 
                   {l: '40/50/60', v: [40, 50, 60]}, 
                   {l: '45/55/65/75', v: [45, 55, 65, 75]}] as group}
-                  <button class="g360-btn-quick" class:active={group.v.every(d => activeButtons.has(d))} onmousedown={() => toggleMultiples(group.v)}>{group.l}</button>
+                  <button class="g360-btn-quick" class:active={group.v.every(d => activeButtons.has(d))} onclick={() => toggleMultiples(group.v)}>{group.l}</button>
                 {/each}
               </div>
             </div>
@@ -575,6 +607,7 @@ type="text"
           <button class="btn-input-action" onclick={() => clearRow(row)} title="Limpiar campos">
             <i class="bi bi-eraser"></i>
           </button>
+          <!-- svelte-ignore a11y_label_has_associated_control -->
           <label class="input-label">Fecha</label>
         </div>
         <div class="calc-cell days-cell">
@@ -588,6 +621,7 @@ type="text"
             oninput={(e) => validarDiasInput(e.currentTarget, row)}
             onfocus={(e) => e.currentTarget.select()}
           >
+          <!-- svelte-ignore a11y_label_has_associated_control -->
           <label class="input-label">Días</label>
         </div>
         <div class="calc-cell result-cell" class:has-tooltip={row.status === 'holiday'}>
@@ -615,13 +649,9 @@ type="text"
         </div>
       </div>
       {/each}
-        </div>
+      </div>
       </div>
 
-      <!--
-        Sección de "Opciones de Exportación". Contiene botones para exportar
-        los resultados a XLSX, copiarlos al portapapeles o limpiar todos los campos.
-      -->
       <!-- Acciones -->
       <div class="g360-card mb-4">
         <div class="card-header">
@@ -629,62 +659,53 @@ type="text"
         </div>
         <div class="card-body">
           <div class="actions-row">
-      <button class="btn-primary" onclick={() => descargarXLSX()}>
-        <i class="bi bi-file-earmark-excel me-1"></i> XLSX
-      </button>
-      <button class="btn-secondary" onclick={() => copiarResultados()}>
-        <i class="bi bi-clipboard me-1"></i> Copiar
-      </button>
-      <button class="btn-theme" onclick={() => showHolidays = true}>
-        <i class="bi bi-calendar3 me-1"></i> Feriados
-      </button>
-      <button class="btn-danger" onclick={() => limpiar()}>
-        <i class="bi bi-trash me-1"></i> Limpiar
-      </button>
+            <button class="btn-primary" onclick={() => descargarXLSX()} title="Descargar en Excel (Ctrl+E)" aria-label="Descargar resultados en formato Excel">
+              <i class="bi bi-file-earmark-excel me-1" aria-hidden="true"></i> XLSX
+            </button>
+            <button class="btn-secondary" onclick={() => copiarResultados()} title="Copiar resultados (Ctrl+S)" aria-label="Copiar resultados al portapapeles">
+              <i class="bi bi-clipboard me-1" aria-hidden="true"></i> Copiar
+            </button>
+            <button class="btn-theme" onclick={() => showHolidays = true} title="Ver lista de feriados" aria-label="Abrir lista de feriados">
+              <i class="bi bi-calendar3 me-1" aria-hidden="true"></i> Feriados
+            </button>
+            <button class="btn-danger" onclick={() => limpiar()} title="Limpiar todos los campos (Ctrl+L)" aria-label="Limpiar todos los campos de cálculo">
+              <i class="bi bi-trash me-1" aria-hidden="true"></i> Limpiar
+            </button>
           </div>
 
-      <!--
-        Leyenda de colores para los resultados.
-        Explica el significado de los colores rojo, azul y verde.
-      -->
-      <!-- Leyenda -->
-      <div class="leyenda d-flex align-items-center gap-3 mt-4">
-        <span class="leyenda-item"><span class="color-box status-holiday-legend"></span> Feriado / Domingo</span>
-        <span class="leyenda-item"><span class="color-box status-saturday-legend"></span> Sábado</span>
-        <span class="leyenda-item"><span class="color-box status-working-legend"></span> Día hábil</span>
-      </div>
+          <div class="leyenda d-flex align-items-center gap-3 mt-5 pt-3 border-t">
+            <span class="leyenda-item"><span class="color-box status-holiday-legend"></span> Feriado / Domingo</span>
+            <span class="leyenda-item"><span class="color-box status-saturday-legend"></span> Sábado</span>
+            <span class="leyenda-item"><span class="color-box status-working-legend"></span> Día hábil</span>
+          </div>
 
-      {#if diasGracia}
-      <!-- Alerta que indica que el modo de +2 días por proceso está activo -->
-      <div class="alert alert-info mb-4" role="alert">
-        Modo: +2 días activado
-      </div>
-      {/if}
-
-<!--
-        Pie de página de la aplicación. Contiene la versión y el componente
-        de firma de G360.
-    -->
-      <footer class="mt-4 pt-3 border-t d-flex justify-content-end align-items-center">
-        <g360-signature mode="own" class="signature-g360"></g360-signature>
-      </footer>
-    </main>
-  </div>
-
-  <HolidaysModal bind:isOpen={showHolidays} {feriados} />
-  <!--
-    Componente modal para mostrar la lista de feriados.
-  -->
-
-  <!-- Toast -->
-  {#if toast.show}
-    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
-      <div class="toast show" role="alert">
-        <div class="toast-body">{toast.message}</div>
+          {#if diasGracia}
+          <div class="alert alert-info mt-4" role="alert">
+            Modo: +2 días activado
+          </div>
+          {/if}
       </div>
     </div>
-  {/if}
+
+  </main>
+
+    <footer class="app-footer">
+      <g360-signature mode="own"></g360-signature>
+    </footer>
+
+  </div>
 </div>
+
+<HolidaysModal bind:isOpen={showHolidays} {feriados} />
+
+<!-- Toast -->
+{#if toast.show}
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
+    <div class="toast show" role="alert">
+      <div class="toast-body">{toast.message}</div>
+    </div>
+  </div>
+{/if}
 
 <!--
   ==========================================
@@ -703,6 +724,13 @@ type="text"
     --g360-status-working: #22c55e; /* Verde */
     --g360-status-bg-opacity: 85%;
     --g360-accent: #00d084;
+    --g360-accent-dark: #00796B;
+    --g360-space-xs: 4px;
+    --g360-space-sm: 8px;
+    --g360-space-md: 16px;
+    --g360-space-lg: 24px;
+    --g360-space-xl: 32px;
+    --bs-body-bg: #0b1220;
     --g360-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --g360-font-h1: 1.5rem;
     --g360-font-h2: 0.875rem;
@@ -722,6 +750,7 @@ type="text"
     --g360-status-saturday: #3b82f6;
     --g360-status-working: #22c55e;
     --g360-status-bg-opacity: 80%;
+    --g360-accent-dark: #00796B;
     --g360-accent: #00d084;
     --g360-glass: rgba(21, 30, 46, 0.75);
   }
@@ -729,13 +758,15 @@ type="text"
   :global(html:not(.dark)) {
     --g360-bg: #ffffff;
     --g360-surface: #f8fafc;
-    --g360-text: #09090b;
-    --g360-muted: #71717a;
-    --g360-border: #d4d4d8;
+    --g360-text: #0f172a;
+    --g360-muted: #334155; /* Contraste mejorado para etiquetas */
+    --g360-border: #94a3b8; /* Borde más visible en layout */
     --g360-status-holiday: #ef4444;
     --g360-status-saturday: #3b82f6;
     --g360-status-working: #22c55e;
     --g360-status-bg-opacity: 85%;
+    --g360-muted: #64748b; /* Mejor contraste en tema claro */
+    --g360-accent-dark: #00796B;
     --g360-accent: #00d084;
     --g360-glass: rgba(255, 255, 255, 0.7);
   }
@@ -793,33 +824,63 @@ type="text"
     font-family: var(--g360-font-family);
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
   }
 
   .g360-btn-quick:hover {
     border-color: var(--g360-accent);
+    background: color-mix(in srgb, var(--g360-accent), transparent 90%);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--g360-accent), transparent 80%);
+    transform: translateY(-1px);
   }
 
-  /* Efecto Glow para botones activos según estado */
-  .g360-btn-quick.active.status-holiday {
-    box-shadow: 0 0 12px color-mix(in srgb, var(--g360-status-holiday), transparent 60%);
-  }
-  .g360-btn-quick.active.status-saturday {
-    box-shadow: 0 0 12px color-mix(in srgb, var(--g360-status-saturday), transparent 60%);
-  }
-  .g360-btn-quick.active.status-working {
-    box-shadow: 0 0 12px color-mix(in srgb, var(--g360-status-working), transparent 60%);
-  }
-  /* Glow estándar para grupos */
-  .g360-btn-quick.active:not([class*='status-']) {
-    box-shadow: 0 0 12px color-mix(in srgb, var(--g360-accent), transparent 60%);
+  .g360-btn-quick:active {
+    transform: scale(0.92);
+    background: color-mix(in srgb, var(--g360-accent), transparent 70%);
   }
 
-  /* Fallback para grupos o botones sin estado definido */
-  .g360-btn-quick.active:not([class*='status-']) {
-    background: var(--g360-accent);
+  /* Estilo para los botones rápidos en tema claro para mayor visibilidad */
+  :global(html:not(.dark)) .g360-btn-quick {
+    background: #fff;
+    border-color: #cbd5e1;
+  }
+
+  /* Efecto Glow para botones activos según estado — más elegante */
+  .g360-btn-quick.active {
+    background: color-mix(in srgb, var(--g360-accent), black 10%);
     border-color: var(--g360-accent);
     color: var(--g360-bg);
+    font-weight: 600;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 208, 132, 0.25);
+  }
+  .g360-btn-quick.active.status-holiday {
+    background: var(--g360-status-holiday);
+    border-color: var(--g360-status-holiday);
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--g360-status-holiday), transparent 50%);
+  }
+  .g360-btn-quick.active.status-saturday {
+    background: var(--g360-status-saturday);
+    border-color: var(--g360-status-saturday);
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--g360-status-saturday), transparent 50%);
+  }
+  .g360-btn-quick.active.status-working {
+    background: var(--g360-status-working);
+    border-color: var(--g360-status-working);
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--g360-status-working), transparent 50%);
+    color: var(--g360-bg);
+  }
+  .g360-btn-quick.active.status-holiday,
+  .g360-btn-quick.active.status-saturday {
+    color: #fff;
+  }
+
+  .btn-collapse:hover {
+    color: var(--g360-accent);
+    background: color-mix(in srgb, var(--g360-accent), transparent 90%);
   }
 
   .app-container {
@@ -850,7 +911,7 @@ type="text"
     transform: scale(1.1);
     transform-origin: center center;
     display: block;
-    margin: 0 auto;
+    margin: 0;
   }
 
   @media (max-width: 480px) {
@@ -894,6 +955,44 @@ type="text"
     line-height: 1;
     margin: 0;
     padding: 4px 0;
+  }
+
+  .fecha-base-indicator {
+    color: var(--g360-accent);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin-left: 0.5rem;
+    box-sizing: border-box;
+  }
+
+  /* Estilos mejorados para los items de la lista de feriados (Modal) */
+  :global(.holiday-item) {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background-color: var(--g360-bg);
+    border-radius: 8px;
+    border: 1px solid var(--g360-border);
+    margin-bottom: 8px;
+    box-sizing: border-box;
+  }
+
+  :global(.holiday-date) {
+    color: var(--g360-status-holiday);
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  :global(.holiday-name) {
+    font-size: var(--g360-font-body);
+    color: var(--g360-text);
+    font-family: 'Inter', sans-serif;
+    text-align: right;
   }
 
   /* Estados de colores para resultados */
@@ -1121,12 +1220,32 @@ type="text"
   .btn-add {
     background: var(--g360-accent);
     color: var(--g360-bg);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .btn-add:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 208, 132, 0.3);
+  }
+
+  .btn-add:active {
+    transform: scale(0.92);
   }
 
   /* Estilos específicos para el botón de eliminar fila (rojo) */
   .btn-remove {
     background: #ef4444;
     color: #fff;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .btn-remove:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  }
+
+  .btn-remove:active {
+    transform: scale(0.92);
   }
 
   /*
@@ -1187,22 +1306,25 @@ type="text"
     color: var(--g360-accent);
   }
 
-  /* Estilos para el input cuando está en foco */
+  /* Estilos para el input cuando está en foco — más moderno */
   .g360-input:focus {
     outline: none;
     border-color: var(--g360-accent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--g360-accent), transparent 85%),
+                inset 0 1px 2px rgba(0, 0, 0, 0.05);
   }
 
   /* Estilos para el input cuando está deshabilitado */
   .g360-input:disabled {
-    opacity: 0.4;
+    opacity: 0.5;
+    background: color-mix(in srgb, var(--g360-bg), var(--g360-surface) 50%);
     cursor: not-allowed;
   }
 
   /* Estilos para el placeholder del input */
   .g360-input::placeholder {
     color: var(--g360-muted);
-    opacity: 0.5;
+    opacity: 0.7; /* Aumentado para visibilidad */
   }
 
   /* Estilos para el input de solo lectura (resultado) */
@@ -1229,9 +1351,9 @@ type="text"
   .g360-input:focus + .input-label,
   .g360-input:not(:placeholder-shown) ~ .input-label {
     top: 0.15rem;
-    left: 0.5rem;
-    font-size: var(--g360-font-micro);
-    color: var(--g360-accent);
+    left: 0.6rem;
+    font-size: 0.725rem;
+    color: color-mix(in srgb, var(--g360-accent), var(--g360-text) 20%);
     font-weight: 600;
     text-transform: uppercase;
   }
@@ -1319,12 +1441,20 @@ type="text"
   .form-check-input {
     background-color: var(--g360-bg);
     border-color: var(--g360-border);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+  }
+
+  .form-check-input:hover {
+    border-color: var(--g360-accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--g360-accent), transparent 85%);
   }
 
   /* Estilos para el input de checkbox/switch cuando está marcado */
   .form-check-input:checked {
     background-color: var(--g360-accent);
     border-color: var(--g360-accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--g360-accent), transparent 70%);
   }
 
   /* Estilos específicos para el switch */
@@ -1342,6 +1472,11 @@ type="text"
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
+    cursor: pointer;
+  }
+
+  .btn:active {
+    transform: scale(0.97);
   }
 
   /* Estilos para botones con borde secundario */
@@ -1363,19 +1498,16 @@ type="text"
     background: var(--g360-accent);
     border-color: var(--g360-accent);
     color: var(--g360-bg);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  /* Estilos para botones secundarios (gris atenuado) */
-  .btn-secondary {
-    background: var(--g360-muted);
-    border-color: var(--g360-muted);
-    color: var(--g360-bg);
+  .btn-success:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 208, 132, 0.3);
   }
 
-  /* Estilos para botones de peligro (rojo) */
-  .btn-danger {
-    background: #ef4444;
-    border-color: #ef4444;
+  .btn-success:active {
+    transform: scale(0.97);
   }
 
   /*
@@ -1446,6 +1578,16 @@ type="text"
     color: var(--g360-bg);
     border: none;
     cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 208, 132, 0.3);
+  }
+
+  .btn-primary:active {
+    transform: scale(0.97);
   }
 
   /* Estilos para botones secundarios */
@@ -1454,11 +1596,19 @@ type="text"
     border: 1px solid var(--g360-border);
     color: var(--g360-text);
     cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .btn-secondary:hover {
-    background: var(--g360-surface);
-    border-color: var(--g360-muted);
+    background: color-mix(in srgb, var(--g360-accent), transparent 90%);
+    border-color: var(--g360-accent);
+    color: var(--g360-accent);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 208, 132, 0.15);
+  }
+
+  .btn-secondary:active {
+    transform: scale(0.97);
   }
 
   /* Estilos para botones de peligro */
@@ -1467,6 +1617,17 @@ type="text"
     color: white;
     border: none;
     cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .btn-danger:hover {
+    background: #ef4444;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  }
+
+  .btn-danger:active {
+    transform: scale(0.97);
   }
 
   /* Estilos para el botón de alternar tema/ver feriados */
@@ -1475,6 +1636,19 @@ type="text"
     border: 1px solid var(--g360-border);
     color: var(--g360-text);
     cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .btn-theme:hover {
+    background: color-mix(in srgb, var(--g360-accent), transparent 90%);
+    border-color: var(--g360-accent);
+    color: var(--g360-accent);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 208, 132, 0.15);
+  }
+
+  .btn-theme:active {
+    transform: scale(0.97);
   }
 
   .btn-collapse {
@@ -1518,8 +1692,11 @@ type="text"
   .status-working-legend {
     background-color: var(--g360-status-working);
   }
-  /* Alinea el signature a la derecha en el footer */
-  .signature-g360 {
-    margin-left: auto;
+
+  .app-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 2rem 0 1rem;
+    margin-top: 1rem;
   }
 </style>

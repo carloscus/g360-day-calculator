@@ -1,13 +1,15 @@
 <script lang="ts">
   interface Props {
     variant?: 'light' | 'dark'
+    class?: string
+    'aria-hidden'?: boolean | 'true' | 'false'
   }
 
-  let { variant = 'light', ...props }: Props = $props()
+  let { variant = 'light', class: className = '', ...props }: Props = $props()
 
   const colors = $derived(variant === 'dark'
     ? { text: '#f8fafc', subtitle: '#94a3b8', dot: '#94a3b8' }
-    : { text: '#1e293b', subtitle: '#64748b', dot: '#475569' }
+    : { text: '#0f172a', subtitle: '#4b5563', dot: '#4b5563' }
   )
 </script>
 
@@ -16,12 +18,13 @@
   width="200"
   height="50"
   viewBox="0 0 200 50"
+  class={className}
   {...props}
 >
   <defs>
     <filter id="glow-{variant}" x="-40%" y="-40%" width="180%" height="180%">
       <feGaussianBlur stdDeviation="2" result="blur" />
-      <feFlood flood-color="#22c55e" flood-opacity="0.8" result="glowColor"/>
+      <feFlood flood-color="#00d084" flood-opacity={variant === 'dark' ? '0.8' : '0.4'} result="glowColor"/>
       <feComposite in="glowColor" in2="blur" operator="in" result="softGlow"/>
       <feMerge>
         <feMergeNode in="softGlow"/>
@@ -30,9 +33,9 @@
     </filter>
   </defs>
   <circle cx="15" cy="15" r="4" fill={colors.dot} /> 
-  <circle cx="15" cy="30" r="4" fill="#22c55e" filter="url(#glow-{variant})" /> 
+  <circle cx="15" cy="30" r="4" fill="#00d084" filter="url(#glow-{variant})" /> 
   <circle cx="15" cy="45" r="4" fill={colors.dot} /> 
-  <path d="M35 15 L 50 30 L 35 45" fill="none" stroke="#22c55e" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow-{variant})"/>
+  <path d="M35 15 L 50 30 L 35 45" fill="none" stroke="#00d084" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow-{variant})"/>
   <text x="62" y="32" font-family="Arial Black, sans-serif" font-weight="bold" font-size="28" fill={colors.text}>G360</text>
   <text x="62" y="46" font-family="monospace" font-size="9" fill={colors.subtitle} letter-spacing="3">BY CCUSI</text>
 </svg>
