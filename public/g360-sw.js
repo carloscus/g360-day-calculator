@@ -2,7 +2,7 @@ const CACHE_NAME = 'g360-calculadora-v1'
 const ASSETS = [
   '/',
   '/index.html',
-  '/manifest.json',
+  '/g360-manifest.json',
   '/feriados.json',
   '/assets/images/favicon.svg'
 ]

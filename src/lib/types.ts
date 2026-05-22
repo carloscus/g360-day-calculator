@@ -14,6 +14,6 @@ export interface CalculationRow {
   mode?: string
   errorFecha?: string
   errorDias?: string
-  fechaLimpia?: string
-  ajuste?: string
+  nombreDiaResultado?: string
+  observaciones?: string
 }

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
+  import ExcelJS from 'exceljs'
   // Componentes UI
   import LogoG360 from './lib/LogoG360.svelte'
   import HolidaysModal from './lib/HolidaysModal.svelte'
@@ -370,6 +371,16 @@
   }
 
   /**
+   * Helper: Devuelve la observación descriptiva basada en el día de la semana
+   */
+  function getObservaciones(date: Date, feriados: Feriado[]): string {
+    const dayNum = date.getDay()
+    if (dayNum === 0 || isHoliday(date, feriados)) return 'Feriado / Domingo'
+    if (dayNum === 6) return 'Sábado'
+    return 'Día hábil'
+  }
+
+  /**
    * Helper: Calcula diferencia de días desde una fecha ingresada
    */
   function calculateFromDate(row: CalculationRow) {
@@ -377,6 +388,8 @@
     if (!from || isNaN(from.getTime())) {
       row.errorFecha = 'Fecha inválida'
       row.resultado = ''
+      row.nombreDiaResultado = undefined
+      row.observaciones = undefined
       return
     }
 
@@ -389,6 +402,8 @@
     const suffix = diffDays === 0 ? ' (Hoy)' : (diffDays < 0 ? ' pasado' : '')
     row.resultado = diffDays === 0 ? `Hoy (${dayName})` : `${Math.abs(diffDays)} día(s)${suffix} (${dayName})`
     row.status = getDayStatus(from, feriados)
+    row.nombreDiaResultado = dayName
+    row.observaciones = getObservaciones(from, feriados)
     row.mode = 'fecha'
   }
 
@@ -404,6 +419,8 @@
     if (diasArray.length === 0) {
       row.resultado = ''
       row.status = ''
+      row.nombreDiaResultado = undefined
+      row.observaciones = undefined
       return
     }
 
@@ -417,6 +434,8 @@
       : formatDate(final)
     
     row.status = getDayStatus(final, feriados)
+    row.nombreDiaResultado = dayNames[final.getDay()]
+    row.observaciones = getObservaciones(final, feriados)
     row.mode = 'dias'
   }
 
@@ -456,19 +475,74 @@
     showToast('Resultados copiados al portapapeles')
   }
 
-  function descargarXLSX() {
-    // Implementación básica de exportación CSV (compatible con Excel)
-    const headers = 'N°,Entrada,Resultado\n'
-    const content = rows
-      .filter(r => r.resultado)
-      .map((r, i) => `${i + 1},${r.fecha || r.dias},${r.resultado}`)
-      .join('\n')
-    
-    const blob = new Blob([headers + content], { type: 'text/csv;charset=utf-8;' })
+  async function descargarXLSX() {
+    const fullDayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
+    const workbook = new ExcelJS.Workbook()
+    const worksheet = workbook.addWorksheet('Cálculos')
+
+    worksheet.columns = [
+      { header: 'Fecha consultada', key: 'fechaConsultada', width: 20 },
+      { header: 'Días', key: 'dias', width: 10 },
+      { header: 'Resultado', key: 'resultado', width: 18 },
+      { header: 'Fecha resultado', key: 'fechaResultado', width: 20 },
+      { header: 'Día', key: 'dia', width: 16 },
+    ]
+
+    const headerRow = worksheet.getRow(1)
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11, name: 'Calibri' }
+    headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } }
+    headerRow.alignment = { horizontal: 'center', vertical: 'middle' }
+    headerRow.height = 22
+    headerRow.eachCell(c => {
+      c.border = {
+        top: { style: 'thin', color: { argb: 'FF334155' } },
+        left: { style: 'thin', color: { argb: 'FF334155' } },
+        bottom: { style: 'thin', color: { argb: 'FF334155' } },
+        right: { style: 'thin', color: { argb: 'FF334155' } },
+      }
+    })
+
+    const filteredRows = rows.filter(r => r.resultado)
+
+    filteredRows.forEach((r, i) => {
+      let rowData: Record<string, string | number> = {}
+      if (r.mode === 'fecha') {
+        const daysMatch = r.resultado?.match(/(\d+)\s*día\(s\)/)
+        const resultadoTexto = daysMatch ? `${daysMatch[1]} días` : r.resultado || ''
+        const parsed = parseFecha(r.fecha)
+        const dayName = parsed ? fullDayNames[parsed.getDay()] : ''
+        rowData = { fechaConsultada: r.fecha, dias: '', resultado: resultadoTexto, fechaResultado: r.fecha, dia: dayName }
+      } else if (r.mode === 'dias') {
+        const dateMatch = r.resultado?.match(/(\d{2}\/\d{2}\/\d{4})/)
+        const resultDate = dateMatch ? dateMatch[1] : r.resultado || ''
+        const parsed = parseFecha(resultDate)
+        const dayName = parsed ? fullDayNames[parsed.getDay()] : ''
+        rowData = { fechaConsultada: '', dias: parseInt(r.dias), resultado: resultDate, fechaResultado: resultDate, dia: dayName }
+      }
+
+      const row = worksheet.addRow(rowData)
+      const zebra = i % 2 === 0 ? 'FFF8FAFC' : 'FFE2E8F0'
+      row.eachCell(c => {
+        c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: zebra } }
+        c.font = { size: 11, name: 'Calibri', color: { argb: 'FF0F172A' } }
+        c.alignment = { horizontal: 'center', vertical: 'middle' }
+        c.border = {
+          top: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+          left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+          bottom: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+          right: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+        }
+      })
+    })
+
+    const buffer = await workbook.xlsx.writeBuffer()
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
-    link.setAttribute('href', URL.createObjectURL(blob))
-    link.setAttribute('download', `calculo_fechas_${new Date().toISOString().slice(0, 10)}.csv`)
+    link.href = url
+    link.download = `calculo_fechas_${new Date().toISOString().slice(0, 10)}.xlsx`
     link.click()
+    URL.revokeObjectURL(url)
   }
 
   function addRow() {

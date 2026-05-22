@@ -141,16 +141,6 @@ body {
 }
 
 .card-header {
-  padding: var(--g360-space-md, 16px);
-  border-bottom:1px solid var(--g360-border);
-  font-weight: 600;
-}
-
-.card-body {
-  padding: var(--g360-space-md, 16px);
-}
-
-.card-header {
   padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--g360-border);
   font-weight: 600;
@@ -517,53 +507,6 @@ body {
 }
 
 .modal-g360 {
-  background: var(--g360-glass, rgba(21, 30, 46, 0.75));
-  backdrop-filter: blur(var(--g360-blur, 16px));
-  -webkit-backdrop-filter: blur(var(--g360-blur, 16px));
-  border:1px solid var(--g360-border);
-  border-radius: var(--g360-rounded, 16px);
-  width:100%;
-  max-width:400px;
-  max-height:80vh;
-  overflow-y: auto;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--g360-space-md, 16px);
-  border-bottom:1px solid var(--g360-border);
-}
-
-.modal-header h2 {
-  font-size:1.25rem;
-  font-weight:600;
-}
-
-.btn-close {
-  background: none;
-  border: none;
-  color: var(--g360-muted);
-  font-size:1.5rem;
-  cursor: pointer;
-}
-
-.btn-close:hover {
-  color: var(--g360-text);
-}
-
-.modal-body {
-  padding: var(--g360-space-md, 16px);
-}
-
-.modal-description {
-  color: var(--g360-muted);
-  font-size: var(--g360-font-sm, 0.75rem);
-  margin-bottom: var(--g360-space-md, 16px);
-}
-
-.modal-g360 {
   background: var(--g360-surface);
   border-radius: 1rem;
   width: 100%;
@@ -697,32 +640,6 @@ body {
   display: flex;
   gap: var(--g360-space-md, 16px);
   flex-wrap: wrap;
-}
-
-.leyenda-item {
-  display: flex;
-  align-items: center;
-  gap: var(--g360-space-sm, 8px);
-  font-size: var(--g360-font-sm, 0.75rem);
-  color: var(--g360-muted);
-}
-
-.color-box {
-  width: 12px;
-  height: 12px;
-  border-radius: 2px;
-}
-
-.color-box.feriado, .color-box.holiday {
-  background: var(--g360-status-holiday);
-}
-
-.color-box.sabado, .color-box.saturday {
-  background: var(--g360-status-saturday);
-}
-
-.color-box.normal, .color-box.working {
-  background: var(--g360-status-working);
 }
 
 .leyenda-item {
