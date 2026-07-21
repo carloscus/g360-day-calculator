@@ -15,10 +15,8 @@
    * ==========================================
    */
 
-  // Variables de entrada para cálculo único
-  let globalBaseDate = $derived.by(() => {
-    return formatDate(new Date());
-  });
+  // Muestra la fecha actual en el encabezado (se captura al cargar)
+  const globalBaseDate = formatDate(new Date());
 
   // Control de visibilidad de modales y secciones
   let showHolidays = $state(false) // Controla la visibilidad del modal de feriados
@@ -75,7 +73,7 @@
         const currentYear = now.getFullYear()
         
         // 1. Calcular la próxima ocurrencia de cada feriado fijo
-        const fijosProximos = fijos.map(f => {
+        const fijosProximos = fijos.map((f: Feriado) => {
           let fechaOcurrencia = new Date(currentYear, f.mes - 1, f.dia)
           // Si ya pasó este año, tomamos el del año siguiente
           if (fechaOcurrencia < now) {
@@ -635,12 +633,6 @@
           <div class="form-check form-switch mb-0 d-flex align-items-center gap-2">
             <input class="form-check-input" type="checkbox" role="switch" id="diasGracia" bind:checked={diasGracia} onchange={() => { rows.forEach(r => calculateForRow(r)); }}>
             <label class="form-check-label" for="diasGracia">+2 días despacho</label>
-            <div class="info-tooltip-wrapper">
-              <span class="info-emoji">💡</span>
-              <div class="g360-custom-tooltip">
-                Suma 2 días + ajuste hábil.
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -753,11 +745,6 @@ type="text"
             <span class="leyenda-item"><span class="color-box status-working-legend"></span> Día hábil</span>
           </div>
 
-          {#if diasGracia}
-          <div class="alert alert-info mt-4" role="alert">
-            Modo: +2 días activado
-          </div>
-          {/if}
       </div>
     </div>
 
@@ -1132,30 +1119,45 @@ type="text"
 
   /*
     Estilos para cada fila de cálculo en la tabla.
-    Define el layout flexbox para la distribución horizontal de los elementos.
+    Define el layout grid para la distribución horizontal de los elementos.
   */
   .calc-row {
-    display: flex;
-    flex-wrap: nowrap;
+    display: grid;
+    grid-template-areas: "index date days result action";
+    grid-template-columns: 32px 1fr 100px 1fr 40px;
+    gap: var(--g360-space-md, 16px);
+    align-items: stretch;
+    padding: var(--g360-space-md);
+    min-width: 0;
+    box-sizing: border-box;
+  }
+  .calc-row + .calc-row {
+    border-top: 1px solid var(--g360-border);
+  }
+  .calc-cell.index-cell { grid-area: index; }
+  .calc-cell.date-cell { grid-area: date; }
+  .calc-cell.days-cell { grid-area: days; }
+  .calc-cell.result-cell { grid-area: result; }
+  .calc-cell.btn-cell {
+    grid-area: action;
+    justify-self: center;
+  }
+  .calc-cell.index-cell {
+    justify-content: center;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem;
-    border-bottom: 1px solid var(--g360-border);
-    overflow-x: auto;
-    min-width: 600px;
   }
-
-  .calc-row::-webkit-scrollbar {
-    height: 4px;
-  }
-
-  .calc-row::-webkit-scrollbar-thumb {
-    background: var(--g360-border);
-    border-radius: 2px;
-  }
-
-  .calc-row:last-child {
-    border-bottom: none;
+  @media (max-width: 640px) {
+    .calc-row {
+      min-width: 0;
+      grid-template-areas:
+        "index date   days"
+        ".     result action";
+      grid-template-columns: 32px 1fr 1fr;
+      row-gap: var(--g360-space-lg);
+    }
+    .calc-cell.result-cell {
+      margin-top: -1.5rem;
+    }
   }
 
   /*
@@ -1215,117 +1217,79 @@ type="text"
     Usa flex-direction column para apilar el input y el label.
   */
   .calc-cell {
+    position: relative;
     display: flex;
     flex-direction: column;
-    position: relative;
+    min-width: 0;
     padding-top: 1.25rem;
+    box-sizing: border-box;
   }
-
-  /*
-    Estilos específicos para la celda del índice.
-    Define el ancho y el tamaño mínimo/máximo.
-  */
-  .index-cell {
-    width: 10%;
-    flex: 0 0 10%;
-    min-width: 40px;
-    max-width: 50px;
+  .calc-cell .g360-input {
+    width: 100%;
+    padding-top: 1.25rem;
+    padding-bottom: 0.375rem;
   }
-
-  /*
-    Estilos específicos para la celda de la fecha.
-    Define el ancho y el tamaño mínimo.
-  */
-  .date-cell {
-    width: 25%;
-    flex: 0 0 25%;
-    min-width: 120px;
+  .calc-cell .input-label {
+    position: absolute;
+    top: 50%;
+    left: 0.875rem;
+    font-size: var(--g360-font-body);
+    color: var(--g360-muted);
+    pointer-events: none;
+    transition: all 0.15s ease-out;
+    background: var(--g360-bg);
+    padding: 0 0.25rem;
+    line-height: 1;
+    transform: translateY(-50%);
   }
-
-  /*
-    Estilos específicos para la celda de los días.
-    Define el ancho y el tamaño mínimo.
-  */
-  .days-cell {
-    width: 15%;
-    flex: 0 0 15%;
-    min-width: 80px;
+  .calc-cell .g360-input:focus ~ .input-label, 
+  .calc-cell .g360-input:not([value=""]) ~ .input-label {
+    top: 0;
+    transform: translateY(-50%);
+    font-size: var(--g360-font-sm);
+    color: var(--g360-accent);
   }
-
-  /*
-    Estilos específicos para la celda del resultado.
-    Define el ancho y el tamaño mínimo.
-  */
-  .result-cell {
-    width: 40%;
-    flex: 0 0 40%;
-    min-width: 180px;
-  }
-
-  /*
-    Estilos específicos para la celda de los botones de acción (añadir/eliminar).
-    Define el ancho y el tamaño mínimo/máximo.
-  */
-  .btn-cell {
-    width: 10%;
-    flex: 0 0 10%;
-    min-width: 40px;
-    max-width: 50px;
-  }
-
-  /*
-    Estilos base para los botones de añadir y eliminar fila.
-    Define el tamaño, forma y centrado del icono.
-  */
-  .btn-add,
-  .btn-remove {
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .btn-input-action {
+    position: absolute;
+    top: 50%;
+    right: 0.5rem;
+    transform: translateY(-50%);
+    background: none;
     border: none;
-    border-radius: 8px;
+    color: var(--g360-muted);
     cursor: pointer;
-    font-size: 1.25rem;
+    padding: 0.25rem;
+    font-size: 1rem;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 5;
   }
-
-  /* Estilos específicos para el botón de añadir fila (verde G360) */
-  .btn-add {
-    background: var(--g360-accent);
-    color: var(--g360-bg);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  .calc-cell:focus-within .g360-input:not([value=""]) + .btn-input-action,
+  .calc-cell .btn-input-action:hover {
+    opacity: 1;
   }
-
-  .btn-add:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 208, 132, 0.3);
+  .btn-input-action:hover {
+    color: var(--g360-accent);
   }
-
-  .btn-add:active {
-    transform: scale(0.92);
+  .g360-input:focus {
+    outline: none;
+    border-color: var(--g360-accent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--g360-accent), transparent 85%),
+                inset 0 1px 2px rgba(0, 0, 0, 0.05);
   }
-
-  /* Estilos específicos para el botón de eliminar fila (rojo) */
-  .btn-remove {
-    background: #ef4444;
-    color: #fff;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  .g360-input:disabled {
+    opacity: 0.5;
+    background: color-mix(in srgb, var(--g360-bg), var(--g360-surface) 50%);
+    cursor: not-allowed;
   }
-
-  .btn-remove:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  .g360-input::placeholder {
+    color: var(--g360-muted);
+    opacity: 0.7;
   }
-
-  .btn-remove:active {
-    transform: scale(0.92);
+  .g360-input[readonly] {
+    background: var(--g360-surface);
+    cursor: default;
   }
-
-  /*
-    Estilos para el badge numérico del índice de cada fila.
-    Define la forma circular, el fondo y el borde.
-  */
   .index-badge {
     display: flex;
     align-items: center;
@@ -1339,98 +1303,56 @@ type="text"
     font-weight: 600;
     color: var(--g360-muted);
   }
-
-  /* Efecto hover para el badge del índice cuando se pasa el mouse sobre la fila */
   .calc-row:hover .index-badge {
     border-color: var(--g360-accent);
     color: var(--g360-accent);
   }
-
-  /*
-    Estilos base para los inputs de la tabla de cálculo.
-    Define el fondo, color de texto, borde y radio.
-  */
-  .g360-input {
-    width: 100%;
-    padding: 0.5rem 0.75rem;
-    background: var(--g360-bg);
-    color: var(--g360-text);
-    border: 1px solid var(--g360-border);
-    border-radius: 8px;
-    height: 38px;
-    font-size: var(--g360-font-body);
-    transition: border-color 0.2s, box-shadow 0.2s;
-  }
-
-  .btn-input-action {
-    position: absolute;
-    right: 8px;
-    top: 1.4rem;
-    background: transparent;
+  .btn-add,
+  .btn-remove {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     border: none;
-    color: var(--g360-muted);
+    border-radius: 8px;
     cursor: pointer;
-    padding: 2px 6px;
-    font-size: 1.1rem;
-    transition: color 0.2s;
-    z-index: 5;
+    font-size: 1.25rem;
   }
-
-  .btn-input-action:hover {
-    color: var(--g360-accent);
-  }
-
-  /* Estilos para el input cuando está en foco — más moderno */
-  .g360-input:focus {
-    outline: none;
-    border-color: var(--g360-accent);
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--g360-accent), transparent 85%),
-                inset 0 1px 2px rgba(0, 0, 0, 0.05);
-  }
-
-  /* Estilos para el input cuando está deshabilitado */
-  .g360-input:disabled {
-    opacity: 0.5;
-    background: color-mix(in srgb, var(--g360-bg), var(--g360-surface) 50%);
-    cursor: not-allowed;
-  }
-
-  /* Estilos para el placeholder del input */
-  .g360-input::placeholder {
-    color: var(--g360-muted);
-    opacity: 0.7; /* Aumentado para visibilidad */
-  }
-
-  /* Estilos para el input de solo lectura (resultado) */
-  .g360-input[readonly] {
-    background: var(--g360-surface);
-    cursor: default;
-  }
-
-  /*
-    Sistema de Floating Labels G360.
-    Posicionamiento absoluto y transición para el efecto flotante.
-  */
-  .input-label {
-    position: absolute;
-    top: 1.85rem;
-    left: 0.75rem;
-    font-size: var(--g360-font-body);
-    color: var(--g360-muted);
-    pointer-events: none;
+  .btn-add {
+    background: var(--g360-accent);
+    color: var(--g360-bg);
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
-
-  /* Estilos cuando el label flota (input enfocado o con texto) */
-  .g360-input:focus + .input-label,
-  .g360-input:not(:placeholder-shown) ~ .input-label {
-    top: 0.15rem;
-    left: 0.6rem;
-    font-size: 0.725rem;
-    color: color-mix(in srgb, var(--g360-accent), var(--g360-text) 20%);
-    font-weight: 600;
-    text-transform: uppercase;
+  .btn-add:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 208, 132, 0.3);
   }
+  .btn-add:active {
+    transform: scale(0.92);
+  }
+  .btn-remove {
+    background: #ef4444;
+    color: #fff;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .btn-remove:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  }
+  .btn-remove:active {
+    transform: scale(0.92);
+  }
+
+  /* Cell width styles are defined via CSS Grid areas above */
+
+  /* .btn-add and .btn-remove styles are defined above */
+
+  /* .index-badge styles are defined above */
+
+  /* .g360-input styles are defined above */
+
+  /* .input-label styles are defined above */
 
   /*
     Estilos para el encabezado de las tarjetas (g360-card).
