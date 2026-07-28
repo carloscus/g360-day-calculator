@@ -30,7 +30,7 @@
   --g360-space-xl: 32px;
 
   /* Typography - G360 Standard */
-  --g360-font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  --g360-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --g360-font-h1: 1.5rem;
   --g360-font-h2: 0.875rem;
   --g360-font-body: 0.875rem;

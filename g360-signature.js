@@ -99,8 +99,9 @@ class G360Signature extends HTMLElement {
     const isOwn = this.mode === 'own';
     const mainText = isOwn ? 'G360 by ccusi' : 'powered by G360';
     
-    const versionHtml = this.version 
-      ? `<span class="separator">></span><span class="version">${this.version}</span>` 
+    const safeVersion = this.version.replace(/[^a-zA-Z0-9._-]/g, '');
+    const versionHtml = safeVersion 
+      ? `<span class="separator">></span><span class="version">${safeVersion}</span>` 
       : '';
 
     this.shadowRoot.innerHTML = `
