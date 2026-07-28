@@ -54,7 +54,8 @@ export function getFinalDate(base: Date, days: number, grace: boolean, feriados:
   let final = new Date(target1)
   if (grace) {
     final.setDate(final.getDate() + 2)
-    while (true) {
+    let maxIterations = 365
+    while (maxIterations-- > 0) {
       const isSunday = final.getDay() === 0
       if (isHoliday(final, feriados) || isSunday) {
         final.setDate(final.getDate() + 1)

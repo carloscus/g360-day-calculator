@@ -15,8 +15,10 @@
    * ==========================================
    */
 
-  // Muestra la fecha actual en el encabezado (se captura al cargar)
-  const globalBaseDate = formatDate(new Date());
+  // Fecha actual del sistema (se recalcula en cada uso)
+  function getCurrentDateLabel(): string {
+    return formatDate(new Date())
+  }
 
   // Control de visibilidad de modales y secciones
   let showHolidays = $state(false) // Controla la visibilidad del modal de feriados
@@ -39,13 +41,15 @@
   }
 
   // Configuración de UI
-  let toast = $state<{ show: boolean; message: string }>({ // Estado para mostrar mensajes temporales
+  let toast = $state<{ show: boolean; message: string }>({
     show: false,
     message: ''
   })
-  let darkMode = $state(false) // Controla el modo oscuro de la interfaz
-  let diasGracia = $state(false) // Flag para activar/desactivar los +2 días de proceso
-  let quickActionsCollapsed = $state(true) // Estado para colapsar accciones rápidas en móvil (inicia colapsado)
+  let toastTimer: ReturnType<typeof setTimeout> | null = null
+  let darkMode = $state(false)
+  let diasGracia = $state(false)
+  let quickActionsCollapsed = $state(true)
+  let loadingFeriados = $state(true)
 
   // Timers para el debounce de cálculos por fila
   let calculationTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -57,35 +61,37 @@
    */
   onMount(() => {
     // Cargar modo oscuro desde localStorage o preferencia del sistema
-    const storedDark = localStorage.getItem('g360_dark_mode')
+    let storedDark: string | null = null
+    try {
+      storedDark = localStorage.getItem('g360_dark_mode')
+    } catch { /* modo privado */ }
     darkMode =
       storedDark === 'true' ||
       (!storedDark && window.matchMedia('(prefers-color-scheme: dark)').matches)
     applyDarkMode()
 
-    // Cargar feriados desde el archivo JSON público
-    fetch(`${import.meta.env.BASE_URL}feriados.json`)
-      .then(res => res.json())
-      .then(data => {
+    // Cargar feriados desde el archivo JSON público con retry
+    const MAX_RETRIES = 2
+    async function loadFeriados(attempt = 0): Promise<void> {
+      try {
+        const res = await fetch(`${import.meta.env.BASE_URL}feriados.json`)
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const data = await res.json()
         const fijos = data.feriados || []
         const now = new Date()
         now.setHours(0, 0, 0, 0)
         const currentYear = now.getFullYear()
         
-        // 1. Calcular la próxima ocurrencia de cada feriado fijo
         const fijosProximos = fijos.map((f: Feriado) => {
           let fechaOcurrencia = new Date(currentYear, f.mes - 1, f.dia)
-          // Si ya pasó este año, tomamos el del año siguiente
           if (fechaOcurrencia < now) {
             fechaOcurrencia = new Date(currentYear + 1, f.mes - 1, f.dia)
           }
           return { ...f, anio: fechaOcurrencia.getFullYear() }
         })
 
-        // 2. Obtener Semana Santa (Móviles) para este año y el próximo
         const moviles = [...getSemanaSanta(currentYear), ...getSemanaSanta(currentYear + 1)]
         
-        // 3. Unir y filtrar solo los que están en el futuro (máximo 12 meses)
         const limiteFuturo = new Date(now)
         limiteFuturo.setFullYear(limiteFuturo.getFullYear() + 1)
 
@@ -104,10 +110,18 @@
             const diaSemana = dayNames[d.getDay()]
             return { ...f, nombre: `${f.nombre} (${diaSemana})` }
           })
-      })
-      .catch(() => {
+      } catch (err) {
+        if (attempt < MAX_RETRIES) {
+          await new Promise(r => setTimeout(r, 1000 * (attempt + 1)))
+          return loadFeriados(attempt + 1)
+        }
         feriados = []
-      })
+        showToast('Error cargando feriados. Los cálculos pueden ser imprecisos.')
+      } finally {
+        loadingFeriados = false
+      }
+    }
+    loadFeriados()
 
     // Configurar atajos de teclado globales
     const handleKeydown = (e: KeyboardEvent) => {
@@ -124,15 +138,11 @@
             break
           case 'e':
             e.preventDefault()
-            descargarXLSX()
-            break
-          case 's':
-            e.preventDefault()
-            copiarResultados()
+            exportXLSX()
             break
           case 'l':
             e.preventDefault()
-            limpiar()
+            clearAll()
             break
         }
       }
@@ -144,7 +154,12 @@
 
     // Agregar y remover listener de teclado
     window.addEventListener('keydown', handleKeydown)
-    return () => window.removeEventListener('keydown', handleKeydown)
+    return () => {
+      window.removeEventListener('keydown', handleKeydown)
+      if (toastTimer) clearTimeout(toastTimer)
+      calculationTimers.forEach(t => clearTimeout(t))
+      calculationTimers.clear()
+    }
   })
 
   /**
@@ -159,7 +174,9 @@
    */
   function applyDarkMode() {
     document.documentElement.classList.toggle('dark', darkMode)
-    localStorage.setItem('g360_dark_mode', String(darkMode))
+    try {
+      localStorage.setItem('g360_dark_mode', String(darkMode))
+    } catch { /* modo privado o storage lleno */ }
   }
 
   /**
@@ -167,9 +184,11 @@
    * @param message - Mensaje a mostrar
    */
   function showToast(message: string) {
-    toast = { show: true, message } // Activa el toast con el mensaje
-    setTimeout(() => {
+    if (toastTimer) clearTimeout(toastTimer)
+    toast = { show: true, message }
+    toastTimer = setTimeout(() => {
       toast = { show: false, message: '' }
+      toastTimer = null
     }, 3000)
   }
 
@@ -179,16 +198,17 @@
         .map(r => parseInt(r.dias))
   ));
 
-  function toggleRapido(dias: number) {
+  function toggleQuickAction(dias: number) {
     const diasStr = String(dias);
-    // Buscamos si ya existe una fila con ese número de días que no tenga una fecha manual
     const existingRowIndex = rows.findIndex(r => r.dias === diasStr && !r.fecha);
 
     if (existingRowIndex !== -1) {
-      // Si existe, la eliminamos (comportamiento de toggle)
       rows = rows.filter((_, i) => i !== existingRowIndex);
     } else {
-      // Añadimos la nueva fila al principio de las filas no vacías
+      if (rows.length >= MAX_ROWS) {
+        showToast(`Máximo ${MAX_ROWS} filas permitidas`)
+        return
+      }
       const newRow = { id: crypto.randomUUID(), fecha: '', dias: diasStr, resultado: '' };
       const currentNonEmptyRows = rows.filter(r => r.fecha || r.dias);
       rows = [newRow, ...currentNonEmptyRows];
@@ -197,22 +217,22 @@
     ensureEmptyRow();
   }
 
-  function toggleMultiples(combos: number[]) {
+  function toggleGroupActions(combos: number[]) {
     const allCombosCurrentlyActive = combos.every(d => activeButtons.has(d));
     let currentNonEmptyRows = rows.filter(r => r.fecha || r.dias);
 
     if (allCombosCurrentlyActive) {
-      // Si todos los combos ya están activos, los eliminamos
       currentNonEmptyRows = currentNonEmptyRows.filter(r => !combos.includes(parseInt(r.dias)) || r.fecha !== '');
     } else {
-      // Si no todos están activos, añadimos los que falten
-      combos.forEach(diasNum => {
-        const diasStr = String(diasNum);
-        if (!currentNonEmptyRows.some(r => r.dias === diasStr && !r.fecha)) {
-          const newRow = { id: crypto.randomUUID(), fecha: '', dias: diasStr, resultado: '' };
-          currentNonEmptyRows = [newRow, ...currentNonEmptyRows]; // Añadir al principio
-          calculateForRow(newRow, 'dias', true);
-        }
+      const missingCombos = combos.filter(d => !currentNonEmptyRows.some(r => r.dias === String(d) && !r.fecha));
+      if (currentNonEmptyRows.length + missingCombos.length > MAX_ROWS) {
+        showToast(`Máximo ${MAX_ROWS} filas permitidas`)
+        return
+      }
+      missingCombos.forEach(diasNum => {
+        const newRow = { id: crypto.randomUUID(), fecha: '', dias: String(diasNum), resultado: '' };
+        currentNonEmptyRows = [newRow, ...currentNonEmptyRows];
+        calculateForRow(newRow, 'dias', true);
       });
     }
     rows = currentNonEmptyRows; // Reasignar rows para disparar reactividad
@@ -235,7 +255,7 @@
    * @param input - Elemento input del DOM
    * @param row - Objeto de la fila
    */
-  function validarDiasInput(input: HTMLInputElement, row: CalculationRow) {
+  function validateDaysInput(input: HTMLInputElement, row: CalculationRow) {
     // Reemplazar cualquier caracter que no sea número o coma
     let value = input.value.replace(/[^0-9,]/g, '')
     // No permitir comas al inicio
@@ -275,7 +295,7 @@
    * @param input - Elemento input del DOM
    * @param row - Objeto de la fila para actualizar el estado
    */
-  function formatearFechaInput(input: HTMLInputElement, row: CalculationRow) {
+  function formatDateInput(input: HTMLInputElement, row: CalculationRow) {
     let digits = input.value.replace(/\D/g, '')
 
     // Validar día (01-31)
@@ -290,6 +310,14 @@
       let m = parseInt(digits.slice(2, 4))
       if (m > 12) digits = digits.slice(0, 2) + '12' + digits.slice(4)
       if (m === 0) digits = digits.slice(0, 2) + '01' + digits.slice(4)
+    }
+
+    // Validar coherencia día/mes (ej: 31/02 -> 28/02)
+    if (digits.length >= 4) {
+      const d = parseInt(digits.slice(0, 2))
+      const m = parseInt(digits.slice(2, 4))
+      const maxDay = new Date(2024, m, 0).getDate()
+      if (d > maxDay) digits = String(maxDay).padStart(2, '0') + digits.slice(2)
     }
 
     // Reconstruir el formato dd/mm/yyyy basado en los dígitos procesados
@@ -315,7 +343,10 @@
       const year = parseInt(partes[0])
       const month = parseInt(partes[1]) - 1
       const day = parseInt(partes[2])
-      return new Date(year, month, day)
+      const date = new Date(year, month, day)
+      // Validar que la fecha no rebote (ej: 31/02 -> 03/03)
+      if (date.getFullYear() !== year || date.getMonth() !== month || date.getDate() !== day) return null
+      return date
     }
 
     // Formato tradicional dd/mm/yyyy (requiere 3 partes)
@@ -323,7 +354,11 @@
       const day = parseInt(partes[0])
       const month = parseInt(partes[1]) - 1
       const year = parseInt(partes[2])
-      return new Date(year, month, day)
+      if (isNaN(day) || isNaN(month) || isNaN(year)) return null
+      const date = new Date(year, month, day)
+      // Validar que la fecha no rebote (ej: 31/02 -> 03/03)
+      if (date.getFullYear() !== year || date.getMonth() !== month || date.getDate() !== day) return null
+      return date
     }
 
     return null
@@ -369,12 +404,12 @@
   }
 
   /**
-   * Helper: Devuelve la observación descriptiva basada en el día de la semana
+   * Helper: Devuelve la observación descriptiva basada en el estado del día
    */
   function getObservaciones(date: Date, feriados: Feriado[]): string {
-    const dayNum = date.getDay()
-    if (dayNum === 0 || isHoliday(date, feriados)) return 'Feriado / Domingo'
-    if (dayNum === 6) return 'Sábado'
+    const status = getDayStatus(date, feriados)
+    if (status === 'holiday') return 'Feriado / Domingo'
+    if (status === 'saturday') return 'Sábado'
     return 'Día hábil'
   }
 
@@ -453,12 +488,12 @@
     applyDarkMode()
   }
 
-  function limpiar() {
+  function clearAll() {
     rows = [{ id: crypto.randomUUID(), fecha: '', dias: '', resultado: '' }]
     showToast('Campos limpiados')
   }
 
-  function copiarResultados() {
+  function copyResults() {
     const texto = rows
       .filter(r => r.resultado)
       .map((r, i) => `${i + 1}. ${r.fecha || r.dias + ' días'} -> ${r.resultado}`)
@@ -469,11 +504,32 @@
       return
     }
 
-    navigator.clipboard.writeText(texto)
-    showToast('Resultados copiados al portapapeles')
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(texto)
+        .then(() => showToast('Resultados copiados al portapapeles'))
+        .catch(() => fallbackCopy(texto))
+    } else {
+      fallbackCopy(texto)
+    }
   }
 
-  async function descargarXLSX() {
+  function fallbackCopy(text: string) {
+    const textarea = document.createElement('textarea')
+    textarea.value = text
+    textarea.style.position = 'fixed'
+    textarea.style.opacity = '0'
+    document.body.appendChild(textarea)
+    textarea.select()
+    try {
+      document.execCommand('copy')
+      showToast('Resultados copiados al portapapeles')
+    } catch {
+      showToast('No se pudo copiar. Selecciona manualmente el texto.')
+    }
+    document.body.removeChild(textarea)
+  }
+
+  async function exportXLSX() {
     const fullDayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
     const workbook = new ExcelJS.Workbook()
     const worksheet = workbook.addWorksheet('Cálculos')
@@ -543,7 +599,13 @@
     URL.revokeObjectURL(url)
   }
 
+  const MAX_ROWS = 20
+
   function addRow() {
+    if (rows.length >= MAX_ROWS) {
+      showToast(`Máximo ${MAX_ROWS} filas permitidas`)
+      return
+    }
     rows = [...rows, { id: crypto.randomUUID(), fecha: '', dias: '', resultado: '' }]
   }
 </script>
@@ -557,9 +619,9 @@
             <h1 class="app-title mb-0">CALCULADORA DE DÍAS</h1>
           </div>
           <div class="d-flex align-items-center">
-            <button 
-              class="btn-theme" 
-              onclick={() => toggleDarkMode()} 
+            <button
+              class="btn-theme btn-theme-toggle"
+              onclick={() => toggleDarkMode()}
               title="Alternar modo oscuro (Ctrl+D)"
               aria-label={darkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
               aria-live="polite"
@@ -589,6 +651,9 @@
           </button>
         </div>
         <div class="card-body" class:collapse={quickActionsCollapsed}>
+          {#if loadingFeriados}
+            <div class="text-muted text-xs py-2">Cargando feriados...</div>
+          {/if}
           <div class="quick-actions-container">
             <div class="quick-actions-group">
               <span class="quick-actions-label">Individuales</span>
@@ -600,7 +665,7 @@
                     class:status-holiday={activeButtons.has(d) && getQuickStatus(d) === 'holiday'}
                     class:status-saturday={activeButtons.has(d) && getQuickStatus(d) === 'saturday'}
                     class:status-working={activeButtons.has(d) && getQuickStatus(d) === 'working'}
-                    onclick={() => toggleRapido(d)}
+                    onclick={() => toggleQuickAction(d)}
                   >
                     {d}d
                   </button>
@@ -617,7 +682,7 @@
                   {l: '75/90', v: [75, 90]}, 
                   {l: '40/50/60', v: [40, 50, 60]}, 
                   {l: '45/55/65/75', v: [45, 55, 65, 75]}] as group}
-                  <button class="g360-btn-quick" class:active={group.v.every(d => activeButtons.has(d))} onclick={() => toggleMultiples(group.v)}>{group.l}</button>
+                  <button class="g360-btn-quick" class:active={group.v.every(d => activeButtons.has(d))} onclick={() => toggleGroupActions(group.v)}>{group.l}</button>
                 {/each}
               </div>
             </div>
@@ -640,14 +705,14 @@
       <div class="g360-card mb-4">
         <div class="card-header">
           <div class="d-flex align-items-center justify-content-between w-100">
-            <h2>Cálculo de Fechas <small class="fecha-base-indicator">(Hoy: {globalBaseDate})</small></h2>
+            <h2>Cálculo de Fechas <small class="fecha-base-indicator">(Hoy: {getCurrentDateLabel()})</small></h2>
             <div class="base-date-selector d-flex align-items-center gap-2">
               <!-- La fecha base es siempre "hoy" y no es editable.
                    Los cálculos se realizan a partir de la fecha actual del sistema. -->
             </div>
           </div>
         </div>
-        <div class="card-body p-0">
+        <div class="card-body p-0" aria-live="polite" aria-label="Resultados de cálculo">
       {#each rows as row, i (row.id)}
       <!--
         Cada 'calc-row' representa una fila de cálculo individual.
@@ -668,7 +733,7 @@ type="text"
             disabled={row.dias !== '' && row.dias !== undefined} 
             oninput={() => calculateForRow(row, 'fecha')}
             onfocus={(e) => e.currentTarget.select()}
-            onblur={(e) => { formatearFechaInput(e.currentTarget, row); calculateForRow(row, 'fecha', true) }}
+            onblur={(e) => { formatDateInput(e.currentTarget, row); calculateForRow(row, 'fecha', true) }}
            >
           <button class="btn-input-action" onclick={() => clearRow(row)} title="Limpiar campos">
             <i class="bi bi-eraser"></i>
@@ -684,7 +749,7 @@ type="text"
             placeholder="Días"
             autocomplete="off"
             disabled={row.fecha !== '' && row.fecha !== undefined && row.fecha.length >= 6} 
-            oninput={(e) => validarDiasInput(e.currentTarget, row)}
+            oninput={(e) => validateDaysInput(e.currentTarget, row)}
             onfocus={(e) => e.currentTarget.select()}
           >
           <!-- svelte-ignore a11y_label_has_associated_control -->
@@ -725,16 +790,16 @@ type="text"
         </div>
         <div class="card-body">
           <div class="actions-row">
-            <button class="btn-primary" onclick={() => descargarXLSX()} title="Descargar en Excel (Ctrl+E)" aria-label="Descargar resultados en formato Excel">
+            <button class="btn-primary" onclick={() => exportXLSX()} title="Descargar en Excel (Ctrl+E)" aria-label="Descargar resultados en formato Excel">
               <i class="bi bi-file-earmark-excel me-1" aria-hidden="true"></i> XLSX
             </button>
-            <button class="btn-secondary" onclick={() => copiarResultados()} title="Copiar resultados (Ctrl+S)" aria-label="Copiar resultados al portapapeles">
+            <button class="btn-secondary" onclick={() => copyResults()} title="Copiar resultados" aria-label="Copiar resultados al portapapeles">
               <i class="bi bi-clipboard me-1" aria-hidden="true"></i> Copiar
             </button>
             <button class="btn-theme" onclick={() => showHolidays = true} title="Ver lista de feriados" aria-label="Abrir lista de feriados">
               <i class="bi bi-calendar3 me-1" aria-hidden="true"></i> Feriados
             </button>
-            <button class="btn-danger" onclick={() => limpiar()} title="Limpiar todos los campos (Ctrl+L)" aria-label="Limpiar todos los campos de cálculo">
+            <button class="btn-danger" onclick={() => clearAll()} title="Limpiar todos los campos (Ctrl+L)" aria-label="Limpiar todos los campos de cálculo">
               <i class="bi bi-trash me-1" aria-hidden="true"></i> Limpiar
             </button>
           </div>
@@ -837,8 +902,6 @@ type="text"
   }
 
   .btn-theme {
-    width: 48px;
-    height: 48px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -846,12 +909,12 @@ type="text"
     border: 1px solid var(--g360-border);
     background: transparent;
     color: var(--g360-text);
-    font-size: 1.25rem;
     cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .btn-theme:hover {
+    background: color-mix(in srgb, var(--g360-accent), transparent 90%);
     border-color: var(--g360-accent);
     color: var(--g360-accent);
     transform: translateY(-1px);
@@ -860,6 +923,12 @@ type="text"
 
   .btn-theme:active {
     transform: scale(0.95);
+  }
+
+  .btn-theme-toggle {
+    width: 48px;
+    height: 48px;
+    font-size: 1.25rem;
   }
 
   .btn-agregar {
@@ -1344,15 +1413,7 @@ type="text"
     transform: scale(0.92);
   }
 
-  /* Cell width styles are defined via CSS Grid areas above */
 
-  /* .btn-add and .btn-remove styles are defined above */
-
-  /* .index-badge styles are defined above */
-
-  /* .g360-input styles are defined above */
-
-  /* .input-label styles are defined above */
 
   /*
     Estilos para el encabezado de las tarjetas (g360-card).
@@ -1623,27 +1684,6 @@ type="text"
   }
 
   .btn-danger:active {
-    transform: scale(0.97);
-  }
-
-  /* Estilos para el botón de alternar tema/ver feriados */
-  .btn-theme {
-    background: transparent;
-    border: 1px solid var(--g360-border);
-    color: var(--g360-text);
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .btn-theme:hover {
-    background: color-mix(in srgb, var(--g360-accent), transparent 90%);
-    border-color: var(--g360-accent);
-    color: var(--g360-accent);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 208, 132, 0.15);
-  }
-
-  .btn-theme:active {
     transform: scale(0.97);
   }
 
